@@ -21,15 +21,18 @@
 // ========================================================
 // Define Runtime Constants
 // ========================================================
-#define MAX_NUM_INPUTS 6
+#define MAX_NUM_INPUTS 32
 #define MAX_NUM_LOCALS 3
-#define MAX_NUM_WORKERS 16
+#define MAX_NUM_WORKERS 1024
 #define MAX_DIM 4
 #define MAX_FILENAME 200
 #define MAX_OPNAME 64
 // DataLoader
 #define MAX_SAMPLES_PER_LOAD 64
 #define MAX_FILE_LENGTH 128
+// Pre-assigned const flags
+#define MAP_TO_FB_MEMORY 0xABCD0000
+#define MAP_TO_ZC_MEMORY 0xABCE0000
 
 using namespace Legion;
 
@@ -38,9 +41,28 @@ struct ParallelConfig {
   int gpu[MAX_NUM_WORKERS];
 };
 
+bool load_strategies_from_file(const std::string& filename,
+                               std::map<MappingTagID, ParallelConfig>& strategies);
+
+bool save_strategies_to_file(const std::string& filename,
+                             const std::map<MappingTagID, ParallelConfig>& strategies);
+
 class FFConfig {
 public:
-  int epochs, batchSize, numIterations, printFreq;
+  enum PreservedIDs{
+    InvalidID = 0,
+    DataParallelismID = 1,
+  };
+
+  FFConfig();
+  //bool load_strategy_file(std::string filename);
+  //bool save_strategy_file(std::string filename);
+  void parse_args(char** argv, int argc);
+  static MappingTagID get_hash_id(const std::string& pcname);
+  bool find_parallel_config(const std::string& pcname,
+                            ParallelConfig& config);
+public:
+  int epochs, batchSize, iterations, printFreq;
   int inputHeight, inputWidth;
   int numNodes, loadersPerNode, workersPerNode;
   float learningRate, weightDecay;
@@ -50,9 +72,8 @@ public:
   FieldSpace field_space;
   bool syntheticInput, profiling;
   std::string datasetPath, strategyFile;
-  std::map<std::string, ParallelConfig> strategies;
-  bool load_strategy_file(std::string filename);
-  bool save_strategy_file(std::string filename);
+  // We use MappingTagID has the key since we will pass the tag to the mapper
+  std::map<MappingTagID, ParallelConfig> strategies;
 };
 
 struct ParaConfigCompare {

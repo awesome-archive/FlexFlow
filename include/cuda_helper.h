@@ -50,8 +50,9 @@ void scale_kernel(float* ptr, coord_t size, float a, float b);
 __global__
 void ones_kernel(float* ptr, coord_t size);
 
+template<typename DT>
 __global__
-void assign_kernel(float* ptr, coord_t size, float value);
+void assign_kernel(DT* ptr, coord_t size, DT value);
 
 __global__
 void reluBackward(float* grad_ptr, const float* input, int n);
@@ -77,7 +78,7 @@ void print_tensor(const T* ptr, Rect<DIM> rect, const char* prefix)
   int idx = 0;
   printf("%s", prefix);
   for (PointInRectIterator<DIM> it(rect); it(); it++, idx++) {
-    printf(" %.4lf", host_ptr[idx]);
+    printf(" %.4lf", (float)host_ptr[idx]);
   }
   printf("\n");
   checkCUDA(cudaFreeHost(host_ptr));

@@ -1,4 +1,4 @@
-/* Copyright 2017 Stanford, NVIDIA
+/* Copyright 2019 Stanford, NVIDIA
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 #include <cstdio>
 #include "model.h"
 #include "config.h"
-#include "cnn_mapper.h"
+#include "src/mapper/mapper.h"
 #define USE_INCEPTION
 
 // Default Config Parameters
@@ -39,7 +39,6 @@ using namespace Legion;
 LegionRuntime::Logger::Category log_ff("FF");
 
 void parse_input_args(char **argv, int argc, FFConfig& config);
-bool parse_strategy_file(const std::string &filename, FFConfig& config);
 void top_level_task(const Task *task,
                     const std::vector<PhysicalRegion> &regions,
                     Context ctx, Runtime *runtime)
@@ -84,14 +83,16 @@ void top_level_task(const Task *task,
     }
   }
   // Parse strategy file
-  if (parse_strategy_file(config.strategyFile, config))
+  if (!config.load_strategy_file(config.strategyFile))
   {
     log_ff.print("Error: cannot parse strategy file");
     return;
   }
   config.lg_ctx = ctx;
   config.lg_hlr = runtime;
+  config.field_space = runtime->create_field_space(ctx);
   FFModel ff(config);
+  printf("config.size() = %zu\n", config.strategies.size());
   // Init CUDA libraries on each worker
   ArgumentMap local_args;
   size_t workSpaceSize = config.workSpaceSize;
@@ -581,13 +582,3 @@ void parse_input_args(char **argv, int argc, FFConfig& config)
   }
 }
 
-bool parse_strategy_file(const std::string &filename, FFConfig& config)
-{
-  FILE* file;
-  if ((file = fopen(filename.c_str(), "r")) == NULL) {
-    log_ff.print("Cannot open strategy file (%s)", filename.c_str());
-    return false;
-  }
-  fclose(file);
-  return true;
-}

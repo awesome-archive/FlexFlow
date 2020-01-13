@@ -21,15 +21,15 @@ Tensor FFModel::flat(std::string name, Tensor input)
   assert(input.numDim == 4);
   //assert(strategies.find(name) != strategies.end());
   //ParallelConfig pc = strategies[name];
-  IndexSpaceT<3> task_is_3d;
+  IndexSpaceT<4> task_is_4d;
   IndexSpaceT<2> task_is_2d;
-  Flat *flat = new Flat(name, config, input, task_is_3d, task_is_2d);
+  Flat *flat = new Flat(name, config, input, task_is_4d, task_is_2d);
   layers.push_back(flat);
   return flat->output;
 }
 
 Flat::Flat(std::string _name, FFConfig _config, Tensor _input,
-           IndexSpaceT<3> _task_is_3d, IndexSpaceT<2> _task_is_2d)
+           IndexSpaceT<4> _task_is_3d, IndexSpaceT<2> _task_is_2d)
 : Op(_name, _input), task_is_3d(_task_is_3d), task_is_2d(_task_is_2d)
 {
   Context ctx = _config.lg_ctx;
@@ -276,7 +276,7 @@ void Flat::backward(const FFModel& ff)
   runtime->execute_index_space(ctx, launcher);
 }
 
-void Flat::update(const FFModel& ff)
-{
-}
+//void Flat::update(const FFModel& ff)
+//{
+//}
 

@@ -17,8 +17,9 @@ void ones_kernel(float* ptr, coord_t size)
   }
 }
 
+template<typename DT>
 __global__
-void assign_kernel(float* ptr, coord_t size, float value)
+void assign_kernel(DT* ptr, coord_t size, DT value)
 {
   CUDA_KERNEL_LOOP(i, size)
   {
@@ -27,11 +28,11 @@ void assign_kernel(float* ptr, coord_t size, float value)
 }
 
 __global__
-void reluBackward(float *grad_ptr, const float *input, int n)
+void reluBackward(float *grad_ptr, const float *output, int n)
 {
   CUDA_KERNEL_LOOP(i, n)
   {
-    grad_ptr[i] = (input[i] > 0.0f) ? grad_ptr[i] : 0;
+    grad_ptr[i] = (output[i] > 0.0f) ? grad_ptr[i] : 0;
   }
 }
 
@@ -71,4 +72,7 @@ void updateGAS(float* para_ptr, const float* grad_ptr, size_t replica_size,
 }
 
 
+template __global__ void assign_kernel<float>(float* ptr, coord_t size, float value);
+template __global__ void assign_kernel<int32_t>(int32_t* ptr, coord_t size, int32_t value);
+template __global__ void assign_kernel<int64_t>(int64_t* ptr, coord_t size, int64_t value);
 
